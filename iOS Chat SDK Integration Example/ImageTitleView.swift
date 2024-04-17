@@ -128,7 +128,7 @@ class ImageTitleView: UIView {
         let titleLabelSize = titleLabel.sizeThatFits(unlimitSize)
         let detailLabelSize = detailLabel.sizeThatFits(unlimitSize)
         
-        let titleViewWidth = min(UIDevice.modelName == "iPhone SE" ? 150 : 200, max(titleLabelSize.width, detailLabelSize.width))
+        let titleViewWidth = min(UIDevice.isOldIPhoneSE ? 150 : 200, max(titleLabelSize.width, detailLabelSize.width))
         let titleViewHeight = CGFloat(44)
         frame = CGRect(x: 0, y: 0, width: titleViewWidth, height: titleViewHeight)
         
@@ -143,7 +143,7 @@ class ImageTitleView: UIView {
         let titleLabelSize = titleLabel.sizeThatFits(unlimitSize)
         let detailLabelSize = detailLabel.sizeThatFits(unlimitSize)
         
-        let titleViewWidth = min(UIDevice.modelName == "iPhone SE" ? 300 : 350, titleLabelSize.width + 8 + detailLabelSize.width)
+        let titleViewWidth = min(UIDevice.isOldIPhoneSE ? 300 : 350, titleLabelSize.width + 8 + detailLabelSize.width)
         let titleViewHeight = CGFloat(40)
         frame = CGRect(x: 0, y: 0, width: titleViewWidth, height: titleViewHeight)
         
