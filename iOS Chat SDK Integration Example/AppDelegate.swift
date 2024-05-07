@@ -99,32 +99,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         )
 
         // Второй вариант: авторизация с использованием JWT-токена (рекомендуется)
-        let authData = let authData = NChatSDKAuthData(
+        let authData = NChatSDKAuthData(
             token: "<JWT-токен>", // Токен необходимо сгенерировать заранее. Документация: https://callcenter.naumen.ru/docs/ru/ncc/web/Content/WebChat/Token_Use.htm
             data: data // Произвольные параметры
         )
 
         // Третий вариант: авторизация с использованием и JWT-токена (данные переданные в токене являются приоритетными)
-        let authData = let authData = NChatSDKAuthData(
+        let authData = NChatSDKAuthData(
             crmId: deviceID, // Уникальный идентфиикатор пользователя
             token: "<JWT-токен>", // Токен необходимо сгенерировать заранее. Документация: https://callcenter.naumen.ru/docs/ru/ncc/web/Content/WebChat/Token_Use.htm
             data: data // Произвольные параметры
         )
 
         // Инициализация NChatSDKService
-        // showcase - идентификатор витрины
-        // handler - обработчик событий
-        // authData - данные авторизации
-        // url - адрес сервера ("https://" + <api host>)
-        // wsUrl - адрес websocket ("wss://" + <websocket host>)
-        // theme - тема для чата
         let chatSDKService = NChatSDKService(
-            showcaseId: ,
-            handler: Handler(),
-            authData: authData,
-            url: ,
-            wsUrl: ,
-            theme: getTheme()
+            showcaseId: , // Идентификатор витрины
+            handler: Handler(), // Обработчик событий
+            authData: authData, // Данные авторизации пользователя
+            url: , // Адрес сервера ("https://" + <api host>)
+            wsUrl: , // Адрес websocket ("wss://" + <websocket host>)
+            theme: getTheme() // Тема для чата
         )
 
         self.chatSDKService = chatSDKService
