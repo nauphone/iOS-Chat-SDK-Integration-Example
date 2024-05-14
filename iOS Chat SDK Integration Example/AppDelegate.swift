@@ -34,10 +34,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             showVoiceMessagePreviewInChat: false
         )
         
-        // Настройка таймаутов видеозвонка
-        VideoCallSettings.shared.setupSettings(
+        // Настройка таймаутов
+
+        // Настройка таймаутов для запросов
+        TimeoutSettings.shared.request = TimeoutSettings.Request(
+            getTimeout: 60,
+            postTimeout: 60,
+            downloadTimeout: 60,
+            uploadTimeout: 60
+        )
+
+        // Настройка таймаутов для видеозвонка
+        TimeoutSettings.shared.videoCall = TimeoutSettings.VideoCall(
             callConnectionTimeout: 30,
             networkConnectionTimeout: 5
+        )
+
+        // Настройка таймаутов для вебсокет-соединения
+        TimeoutSettings.shared.webSocket = TimeoutSettings.WebSocket(
+            connectionTimeout: 5,
+            pingInterval: 60
         )
         
         // Установка расположения положения лейбла "Оператор печатает" Сверху(в NavigationBar) / Снизу(Над строкой ввода сообщения)
@@ -51,7 +67,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         // Установка отображения затемнения при вызове меню вложений
         PopupBlackoutSettings.shared.setupSettings(true)
-        
+
+        // Настройка кеширования сообщений
+        NCacheSettings.shared.setupSettings(
+            shouldCacheMessages: true,
+            shouldHideFilesFolder: true
+        )
+
         // Настройка списка вложений. Для установки стандартного списка вложений настройку призводить не нужно
 //        AttachMenuList.shared.setList([
 //            AttachMenuModel(name: "Фото с камеры", image: StandardImages.addPhoto, type: .cameraPhoto),
@@ -83,48 +105,45 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     private func configureChatSDK() {
         // Инициализация SDK
-        let deviceID = UIDevice.current.identifierForVendor?.uuidString
+        let deviceID = UIDevice.current.identifierForVendor?.uuidString ?? UUID().uuidString
 
         // Произвольные параметры для передачи в SDK
-        var data: [String: String] = [:]
+        var attributes: [String: String] = [:]
 
         // Передача токена для push-уведомлений
-        data.updateValue("<токен для push-уведомлений>", forKey: "APP_PUSH_ID")
-        
+        attributes.updateValue("<токен для push-уведомлений>", forKey: "APP_PUSH_ID")
+
         // Передача данных авторизации (три варианта):
+        // Документация: <Ссылка на документацию>
         // Первый вариант: авторизация через crmId
         let authData = NChatSDKAuthData(
-            crmId: deviceID, // Уникальный идентфиикатор пользователя
-            data: data // Произвольные параметры
+            crmId: deviceID, // Уникальный идентификатор пользователя
+            attributes: attributes // Произвольные параметры
         )
 
-        // Второй вариант: авторизация с использованием JWT-токена (рекомендуется)
-        let authData = let authData = NChatSDKAuthData(
-            token: "<JWT-токен>", // Токен необходимо сгенерировать заранее. Документация: https://callcenter.naumen.ru/docs/ru/ncc/web/Content/WebChat/Token_Use.htm
-            data: data // Произвольные параметры
+        // Второй вариант: авторизация с использованием генерируемого на стороне SDK JWT-токена (используется шифрование RS256)
+        // Рекомендуется к использованию
+        let authData = NChatSDKAuthData(
+            crmId: deviceID, // Уникальный идентификатор пользователя
+            attributes: attributes, // Произвольные параметры
+            privateKey: "<Приватный ключ>" // Приватный ключ для генерации JWT-токена. Документация: https://callcenter.naumen.ru/docs/ru/ncc/web/Content/WebChat/Token_Use.htm
         )
 
-        // Третий вариант: авторизация с использованием и JWT-токена (данные переданные в токене являются приоритетными)
-        let authData = let authData = NChatSDKAuthData(
-            crmId: deviceID, // Уникальный идентфиикатор пользователя
+        // Третий вариант: авторизация с использованием JWT-токена
+        // Рекомендуется к использованию
+        let authData = NChatSDKAuthData(
             token: "<JWT-токен>", // Токен необходимо сгенерировать заранее. Документация: https://callcenter.naumen.ru/docs/ru/ncc/web/Content/WebChat/Token_Use.htm
-            data: data // Произвольные параметры
+            attributes: attributes // Произвольные параметры
         )
 
         // Инициализация NChatSDKService
-        // showcase - идентификатор витрины
-        // handler - обработчик событий
-        // authData - данные авторизации
-        // url - адрес сервера ("https://" + <api host>)
-        // wsUrl - адрес websocket ("wss://" + <websocket host>)
-        // theme - тема для чата
         let chatSDKService = NChatSDKService(
-            showcaseId: ,
-            handler: Handler(),
-            authData: authData,
-            url: ,
-            wsUrl: ,
-            theme: getTheme()
+            authData: authData, // Данные авторизации пользователя
+            showcaseId: , // Идентификатор витрины
+            url: , // Адрес сервера ("https://" + <api host>)
+            wsUrl: , // Адрес websocket ("wss://" + <websocket host>)
+            theme: getTheme(), // Тема для чата
+            handler: Handler() // Обработчик событий
         )
 
         self.chatSDKService = chatSDKService
@@ -196,9 +215,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Тема для видеозвонка
         chatTheme.chatMessageBox.videoCall = self.getVideoCallTheme()
 
-        // Тема для кнопки оценки диалога
-        chatTheme.chatMessageBox.chatRating = self.getRatingButtonTheme()
-
         // Тема для окна оценки диалога
         chatTheme.chatMessageBox.ratingScreen = self.getRatingScreenTheme()
         
@@ -228,9 +244,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         // Тема для опросника
         chatTheme.chatMessageBox.questionnaire = self.getQuestionaryTheme()
-
-        // Тема для окна благодарности за прохождение опроса
-        chatTheme.chatMessageBox.questionaryGratitudeScreenTheme = self.getQuestionaryGratitudeScreenTheme()
         
         // Тема для кнопки прокрутки истории диалога
         chatTheme.chatMessageBox.scrollDownArrow = self.getScrollDownArrowTheme()
@@ -1104,18 +1117,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return chatTheme.chatMessageBox.videoCall
     }
 
-    // MARK: - Тема для кнопки оценки диалога
-    
-    func getRatingButtonTheme() -> ChatRatingTheme {
-        let chatTheme = ChatTheme()
-        
-        chatTheme.chatMessageBox.chatRating.needShowRateButton = true
-        chatTheme.chatMessageBox.chatRating.rateButtonNormalColor = UIColor.gray
-        chatTheme.chatMessageBox.chatRating.rateButtonRatedColor = UIColor(netHex: 0xF5A623)
-        
-        return chatTheme.chatMessageBox.chatRating
-    }
-
     // MARK: - Тема для окна оценки диалога
     
     func getRatingScreenTheme() -> RatingScreenTheme {
@@ -1152,14 +1153,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         chatTheme.chatMessageBox.ratingScreen.text.color = UIColor.black
 
         // Подсказка
-        chatTheme.chatMessageBox.ratingScreen.tooltip.font = UIFont(name: "Futura-Medium", size: 13)
-        chatTheme.chatMessageBox.ratingScreen.tooltip.backgroundColor = UIColor.white
-        chatTheme.chatMessageBox.ratingScreen.tooltip.textColor = UIColor.black
-        chatTheme.chatMessageBox.ratingScreen.tooltip.borderColor = nil
-        chatTheme.chatMessageBox.ratingScreen.tooltip.borderWidth = nil
-        chatTheme.chatMessageBox.ratingScreen.tooltip.verticalInset = 25
-        chatTheme.chatMessageBox.ratingScreen.tooltip.horizontalInset = 25
-        
+        chatTheme.chatMessageBox.ratingScreen.ratingTooltip.backgroundColor = UIColor.white
+        chatTheme.chatMessageBox.ratingScreen.ratingTooltip.textFont = UIFont(name: "Futura-Medium", size: 13)
+        chatTheme.chatMessageBox.ratingScreen.ratingTooltip.textColor = UIColor.black
+        chatTheme.chatMessageBox.ratingScreen.ratingTooltip.textPadding = UIEdgeInsets(top: 16, left: 0, bottom: 16, right: 0)
+        chatTheme.chatMessageBox.ratingScreen.ratingTooltip.cornerRadius = 16
+
         // Тема для звездочек
         chatTheme.chatMessageBox.ratingScreen.stars.colorFilled = UIColor(netHex: 0xFFE025)
         chatTheme.chatMessageBox.ratingScreen.stars.borderWidthFilled = 2
@@ -1369,28 +1368,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         chatTheme.chatMessageBox.questionnaire.cancelButton.height = 18
 
         return chatTheme.chatMessageBox.questionnaire
-    }
-    
-    // MARK: - Тема для окна благодарности за прохождение опроса
-    
-    func getQuestionaryGratitudeScreenTheme() -> QuestionaryGratitudeScreenTheme {
-        let chatTheme = ChatTheme()
-        
-        chatTheme.chatMessageBox.questionaryGratitudeScreenTheme.thanksTextFont = UIFont.systemFont(ofSize: 20, weight: .bold)
-        chatTheme.chatMessageBox.questionaryGratitudeScreenTheme.messageTextFont = UIFont.systemFont(ofSize: 16, weight: .regular)
-        chatTheme.chatMessageBox.questionaryGratitudeScreenTheme.thanksTextColor = UIColor(netHex: 0x222B55)
-        chatTheme.chatMessageBox.questionaryGratitudeScreenTheme.messageTextColor = UIColor(netHex: 0x222B55)
-        chatTheme.chatMessageBox.questionaryGratitudeScreenTheme.closeButtonDefaultColor = UIColor(netHex: 0x52AE30)
-        chatTheme.chatMessageBox.questionaryGratitudeScreenTheme.closeButtonTappedColor = UIColor(netHex: 0x52AE30).withAlphaComponent(0.8)
-        chatTheme.chatMessageBox.questionaryGratitudeScreenTheme.closeButtonInactiveColor = UIColor(netHex: 0x52AE30).withAlphaComponent(0.4)
-        chatTheme.chatMessageBox.questionaryGratitudeScreenTheme.closeButtonTitleColor = UIColor.white
-        chatTheme.chatMessageBox.questionaryGratitudeScreenTheme.closeButtonTitleFont = UIFont.systemFont(ofSize: 16, weight: .regular)
-        chatTheme.chatMessageBox.questionaryGratitudeScreenTheme.closeButtonTitlePadding = 12
-        chatTheme.chatMessageBox.questionaryGratitudeScreenTheme.closeButtonCornerRadius = 43 / 2
-        chatTheme.chatMessageBox.questionaryGratitudeScreenTheme.closeButtonTitle = "Закрыть"
-        chatTheme.chatMessageBox.questionaryGratitudeScreenTheme.messageText = "Мы учтём ваши ответы и сделаем сервис ещё лучше!"
-        
-        return chatTheme.chatMessageBox.questionaryGratitudeScreenTheme
     }
     
     // MARK: - Тема для кнопки прокрутки истории диалога

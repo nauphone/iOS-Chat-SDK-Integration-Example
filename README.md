@@ -41,14 +41,61 @@ dependencies: [
 - link – ссылка для подключения iOS Chat SDK (предоставляется компанией NAUMEN)
 - version – номер версии iOS Chat SDK
 
-### Общее
-Необходимо заполнить пустые параметры в методе `configureChatSDK()` в файле [AppDelegate.swift](https://github.com/nauphone/iOS-Chat-SDK-Integration-Example/blob/master/iOS%20Chat%20SDK%20Integration%20Example/AppDelegate.swift)
+## Настройка и инициализация Chat SDK
+1. Необходимо выбрать способ передачи данных авторизации пользователя
+2. Необходимо заполнить пустые параметры `NChatSDKService` в методе `configureChatSDK()` в файле [AppDelegate.swift](https://github.com/nauphone/iOS-Chat-SDK-Integration-Example/blob/23.12.0/iOS%20Chat%20SDK%20Integration%20Example/AppDelegate.swift)
+
+### Выбор способа передачи данных авторизации пользователя
+Существует три варианта создания данных авторизации ([документация](https://callcenter.naumen.ru/docs/ru/ncc/web/Content/Integration/MobileSDK_Chat/MobileSDK_iOS/MobileSDK_IOS_NChatSDKAuthData.htm)):
+- Первый вариант. Авторизация с использованием crmId:
+```swift
+let authData = NChatSDKAuthData(
+    crmId: deviceID, // Уникальный идентификатор пользователя
+    attributes: attributes // Произвольные параметры
+)
+```
+
+- Второй вариант. Авторизация с использованием генерируемого на стороне SDK JWT-токена (рекомендуемый вариант):
+```swift
+let authData = NChatSDKAuthData(
+    crmId: deviceID, // Уникальный идентификатор пользователя
+    attributes: attributes, // Произвольные параметры
+    privateKey: "<Приватный ключ>" // Приватный ключ для генерации JWT-токена. Документация: https://callcenter.naumen.ru/docs/ru/ncc/web/Content/WebChat/Token_Use.htm
+)
+```
+**Примечание:** Используется шифрование RS256. Токен генерируется локально
+
+- Третий вариант. Авторизация с использованием JWT-токена (рекомендуемый вариант):
+```swift
+let authData = NChatSDKAuthData(
+    token: "<JWT-токен>", // Токен необходимо сгенерировать заранее. Документация: https://callcenter.naumen.ru/docs/ru/ncc/web/Content/WebChat/Token_Use.htm
+    attributes: attributes // Произвольные параметры
+)
+```
+**Примечание:** Данные переданные в JWT-токене являются приоритетными
+
+В зависимости от версии настройка и инициализация Chat SDK могут отличаться:
+- [Пример интеграции Chat SDK в версии 23.12.0](https://github.com/nauphone/iOS-Chat-SDK-Integration-Example/tree/23.12.0)
+- [Пример интеграции Chat SDK 24.0.0 и выше](https://github.com/nauphone/iOS-Chat-SDK-Integration-Example/tree/24.0.0)
+
+### Инициализация SDK
+Необходимо заполнить данные инициализатора `NChatSDKService` в зависимости от интеграции NCC Chat и настроек витрины чата:
+```swift
+let chatSDKService = NChatSDKService(
+    authData: authData, // Данные авторизации пользователя
+    showcaseId: , // Идентификатор витрины
+    url: , // Адрес сервера ("https://" + <api host>)
+    wsUrl: , // Адрес websocket ("wss://" + <websocket host>)
+    theme: getTheme(), // Тема для чата
+    handler: Handler() // Обработчик событий
+)
+```
 
 ## На что обратить внимание при интеграции
-- В файле [ViewController.swift](https://github.com/nauphone/iOS-Chat-SDK-Integration-Example/blob/master/iOS%20Chat%20SDK%20Integration%20Example/ViewController.swift) можно увидеть пример встраивания SDK через кастомный контроллер [ChatContainer](https://github.com/nauphone/iOS-Chat-SDK-Integration-Example/blob/master/iOS%20Chat%20SDK%20Integration%20Example/ChatContainer.swift). Важно отметить, что контроллер-контейнер для контроллера чата должен соответствовать протоколу `NChatSDKToolbar` и включать NavigationBar
-- В качестве примера в проекте присутствует кастомный контейней для контроллера чата [ChatContainer](https://github.com/nauphone/iOS-Chat-SDK-Integration-Example/blob/master/iOS%20Chat%20SDK%20Integration%20Example/ChatContainer.swift), в котором используюется кастомный TitleView [ImageTitleView.swift](https://github.com/nauphone/iOS-Chat-SDK-Integration-Example/blob/master/iOS%20Chat%20SDK%20Integration%20Example/ImageTitleView.swift) и кнопку с аватаром оператора [AvatarButton.swift](https://github.com/nauphone/iOS-Chat-SDK-Integration-Example/blob/master/iOS%20Chat%20SDK%20Integration%20Example/AvatarButton.swift)
-- Стоит обратить внимание на настройку кастомизации в методе `getTheme()` файла  [AppDelegate.swift](https://github.com/nauphone/iOS-Chat-SDK-Integration-Example/blob/master/iOS%20Chat%20SDK%20Integration%20Example/AppDelegate.swift). Кастомизацию можно провести как изменением значений параметров, так и используя конструкторы.
+- В файле [ViewController.swift](https://github.com/nauphone/iOS-Chat-SDK-Integration-Example/blob/24.0.0/iOS%20Chat%20SDK%20Integration%20Example/ViewController.swift) можно увидеть пример встраивания SDK через кастомный контроллер [ChatContainer](https://github.com/nauphone/iOS-Chat-SDK-Integration-Example/blob/24.0.0/iOS%20Chat%20SDK%20Integration%20Example/ChatContainer.swift). Важно отметить, что контроллер-контейнер для контроллера чата должен соответствовать протоколу `NChatSDKToolbar` и включать NavigationBar
+- В качестве примера в проекте присутствует кастомный контейней для контроллера чата [ChatContainer](https://github.com/nauphone/iOS-Chat-SDK-Integration-Example/blob/24.0.0/iOS%20Chat%20SDK%20Integration%20Example/ChatContainer.swift), в котором используюется кастомный TitleView [ImageTitleView.swift](https://github.com/nauphone/iOS-Chat-SDK-Integration-Example/blob/24.0.0/iOS%20Chat%20SDK%20Integration%20Example/ImageTitleView.swift) и кнопку с аватаром оператора [AvatarButton.swift](https://github.com/nauphone/iOS-Chat-SDK-Integration-Example/blob/24.0.0/iOS%20Chat%20SDK%20Integration%20Example/AvatarButton.swift)
+- Стоит обратить внимание на настройку кастомизации в методе `getTheme()` файла  [AppDelegate.swift](https://github.com/nauphone/iOS-Chat-SDK-Integration-Example/blob/24.0.0/iOS%20Chat%20SDK%20Integration%20Example/AppDelegate.swift). Кастомизацию можно провести как изменением значений параметров, так и используя конструкторы.
 
 ## Важно
-- В данном примере показан пример встраивания с использованием собственного контейнера. Дополнительную информацию можно получить в [документации](https://callcenter.naumen.ru/docs/ru/ncc76/ncc/web/ncc.htm#Integration/MobileSDK_Chat/MobileSDK_iOS/MobileSDK_IOS.htm%3FTocPath%3D%25D0%2598%25D0%25BD%25D1%2582%25D0%25B5%25D0%25B3%25D1%2580%25D0%25B0%25D1%2586%25D0%25B8%25D0%25BE%25D0%25BD%25D0%25BD%25D1%258B%25D0%25B5%2520%25D0%25B2%25D0%25BE%25D0%25B7%25D0%25BC%25D0%25BE%25D0%25B6%25D0%25BD%25D0%25BE%25D1%2581%25D1%2582%25D0%25B8%7CSDK%2520%25D0%25B4%25D0%25BB%25D1%258F%2520%25D0%25B8%25D0%25BD%25D1%2582%25D0%25B5%25D0%25B3%25D1%2580%25D0%25B0%25D1%2586%25D0%25B8%25D0%25B8%2520NCC-%25D1%2587%25D0%25B0%25D1%2582%25D0%25B0%2520%25D0%25B2%2520%25D0%25BC%25D0%25BE%25D0%25B1%25D0%25B8%25D0%25BB%25D1%258C%25D0%25BD%25D1%258B%25D0%25B5%2520%25D0%25BF%25D1%2580%25D0%25B8%25D0%25BB%25D0%25BE%25D0%25B6%25D0%25B5%25D0%25BD%25D0%25B8%25D1%258F%7CNCC-%25D1%2587%25D0%25B0%25D1%2582%2520iOS%2520SDK%7C_____0)
-- Интерфейс SDK можно широко кастомизировать. Ознакомиться с примерами кастомизации также можно в [документации](https://callcenter.naumen.ru/docs/ru/ncc76/ncc/web/ncc.htm#Integration/MobileSDK_Chat/MobileSDK_iOS/MobileSDK_IOS_View.htm%3FTocPath%3D%25D0%2598%25D0%25BD%25D1%2582%25D0%25B5%25D0%25B3%25D1%2580%25D0%25B0%25D1%2586%25D0%25B8%25D0%25BE%25D0%25BD%25D0%25BD%25D1%258B%25D0%25B5%2520%25D0%25B2%25D0%25BE%25D0%25B7%25D0%25BC%25D0%25BE%25D0%25B6%25D0%25BD%25D0%25BE%25D1%2581%25D1%2582%25D0%25B8%7CSDK%2520%25D0%25B4%25D0%25BB%25D1%258F%2520%25D0%25B8%25D0%25BD%25D1%2582%25D0%25B5%25D0%25B3%25D1%2580%25D0%25B0%25D1%2586%25D0%25B8%25D0%25B8%2520NCC-%25D1%2587%25D0%25B0%25D1%2582%25D0%25B0%2520%25D0%25B2%2520%25D0%25BC%25D0%25BE%25D0%25B1%25D0%25B8%25D0%25BB%25D1%258C%25D0%25BD%25D1%258B%25D0%25B5%2520%25D0%25BF%25D1%2580%25D0%25B8%25D0%25BB%25D0%25BE%25D0%25B6%25D0%25B5%25D0%25BD%25D0%25B8%25D1%258F%7CNCC-%25D1%2587%25D0%25B0%25D1%2582%2520iOS%2520SDK%7C%25D0%259D%25D0%25B0%25D1%2581%25D1%2582%25D1%2580%25D0%25BE%25D0%25B9%25D0%25BA%25D0%25B0%2520%25D0%25B2%25D0%25BD%25D0%25B5%25D1%2588%25D0%25BD%25D0%25B5%25D0%25B3%25D0%25BE%2520%25D0%25B2%25D0%25B8%25D0%25B4%25D0%25B0%2520NCC-%25D1%2587%25D0%25B0%25D1%2582%25D0%25B0%7C_____0)
+- В данном примере показан пример встраивания с использованием собственного контейнера. Дополнительную информацию можно получить в [документации](https://callcenter.naumen.ru/docs/ru/ncc/web/Content/Integration/MobileSDK_Chat/MobileSDK_iOS/MobileSDK_IOS.htm))
+- Интерфейс SDK можно широко кастомизировать. Ознакомиться с примерами кастомизации также можно в [документации](https://callcenter.naumen.ru/docs/ru/ncc/web/Content/Integration/MobileSDK_Chat/MobileSDK_iOS/MobileSDK_IOS_View.htm)
